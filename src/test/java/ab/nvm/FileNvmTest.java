@@ -45,6 +45,14 @@ class FileNvmTest {
     assertNull(crud.get(pk, null));
     assertNull(crud.get(pk, sk));
 
+    crud.put(pk, "1", content);
+    crud.put(pk, "2", content);
+    crud.put(pk, "11", content);
+    assertArrayEquals(("1\0" + "11\0" + "2\0").getBytes(), crud.get(pk, null));
+    crud.delete(pk, "1");
+    crud.delete(pk, "2");
+    crud.delete(pk, "11");
+
     crud.put(pk, sk, content);
     crud.put(pk, sk2, sk2.getBytes());
     byte[] list = (Arrays.stream(new String[]{sk, sk2}).sorted().collect(Collectors.joining("\0")) + "\0").getBytes();
