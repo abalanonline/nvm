@@ -25,12 +25,16 @@ public interface Crud extends AutoCloseable {
    * @return concatenated asciiz sort keys if sk is null, bytes or null if pk-sk does not exist
    */
   byte[] get(String pk, String sk);
-  void put(String pk, String sk, byte[] bytes);
+  /**
+   * @return true if the resource was updated, false if created
+   */
+  boolean put(String pk, String sk, byte[] bytes);
   /**
    * @return true if the resource was deleted
    */
   boolean delete(String pk, String sk);
   default void validateKey(String key) {
+    if (key == null || key.isEmpty()) throw new IllegalArgumentException(key);
     for (byte b : key.getBytes())
       if (!(b >= 'A' && b <= 'Z' || b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '-' || b == '_'))
         throw new IllegalArgumentException(key);

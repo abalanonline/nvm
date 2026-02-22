@@ -25,17 +25,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class FileNvmTest {
+class SynchronizedTest {
 
   @Test
   void test() throws IOException {
     Path path = Paths.get("target/" + UUID.randomUUID());
-    assertThrows(RuntimeException.class, () -> new FileNvm(path).open());
     Files.createDirectories(path);
     try {
-      CrudTest.test(new FileNvm(path));
+      Crud nvm = new SynchronizedNvm(new FileNvm(path)).open();
+      assertThrows(RuntimeException.class, () -> nvm.get("/", "\\"));
+      assertThrows(RuntimeException.class, nvm::open);
+      nvm.close();
+      CrudTest.test(nvm);
     } finally {
       try { Files.delete(path); } catch (IOException ignore) {}
     }

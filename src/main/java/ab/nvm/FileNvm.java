@@ -19,6 +19,7 @@ package ab.nvm;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Collectors;
@@ -33,7 +34,7 @@ public class FileNvm implements Crud {
   @Override
   public byte[] get(String pk, String sk) {
     try {
-      validateKey(pk);
+      //validateKey(pk); // TODO: 2026-02-22 move the boilerplate validation to Synchronized class
       Path pkPath = path.resolve(pk);
       if (!Files.isDirectory(pkPath)) return null;
       if (sk != null) return Files.exists(pkPath.resolve(sk)) ? Files.readAllBytes(pkPath.resolve(sk)) : null;
@@ -46,13 +47,14 @@ public class FileNvm implements Crud {
   }
 
   @Override
-  public void put(String pk, String sk, byte[] bytes) {
+  public boolean put(String pk, String sk, byte[] bytes) {
     try {
-      validateKey(pk);
-      validateKey(sk);
       Path pkPath = path.resolve(pk);
       Files.createDirectories(pkPath);
-      Files.write(pkPath.resolve(sk), bytes);
+      Path skPath = pkPath.resolve(sk);
+      boolean exists = Files.exists(skPath);
+      Files.write(skPath, bytes);
+      return exists;
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -61,11 +63,13 @@ public class FileNvm implements Crud {
   @Override
   public boolean delete(String pk, String sk) {
     try {
-      validateKey(pk);
-      validateKey(sk);
       Path pkPath = path.resolve(pk);
       if (!Files.isDirectory(pkPath)) return false;
-      return Files.deleteIfExists(pkPath.resolve(sk));
+      boolean result = Files.deleteIfExists(pkPath.resolve(sk));
+      if (result) try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(pkPath)) {
+        if (!directoryStream.iterator().hasNext()) Files.delete(pkPath);
+      }
+      return result;
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

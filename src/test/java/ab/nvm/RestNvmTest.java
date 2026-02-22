@@ -25,17 +25,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class FileNvmTest {
+class RestNvmTest {
+
+  public static final int PORT = 8080;
 
   @Test
   void test() throws IOException {
     Path path = Paths.get("target/" + UUID.randomUUID());
-    assertThrows(RuntimeException.class, () -> new FileNvm(path).open());
     Files.createDirectories(path);
-    try {
-      CrudTest.test(new FileNvm(path));
+    try (RestServer server = new RestServer(new FileNvm(path), PORT).open()) {
+      CrudTest.test(new RestNvm("http://localhost:" + PORT + "/"));
     } finally {
       try { Files.delete(path); } catch (IOException ignore) {}
     }
